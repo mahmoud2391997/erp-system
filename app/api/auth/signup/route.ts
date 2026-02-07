@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { hash } from 'bcrypt';
 import { prisma } from '../../../../lib/prisma';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const { email, password, name, companyName } = await request.json();
