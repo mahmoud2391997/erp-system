@@ -8,6 +8,8 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client'],
   },
+  // Disable static generation for API routes
+  trailingSlash: false,
 };
 
 module.exports = nextConfig;

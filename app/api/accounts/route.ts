@@ -9,9 +9,14 @@ export const runtime = 'nodejs';
 // GET accounts
 export async function GET(request: NextRequest) {
   try {
-    // Handle build-time requests
+    // Handle build-time requests more comprehensively
     if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
       // During build, database is not available. Return empty array.
+      return NextResponse.json([]);
+    }
+    
+    // Additional build-time safety check
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
       return NextResponse.json([]);
     }
 
