@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcrypt';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../lib/prisma';
+import { hash } from 'bcrypt';
 
-const prisma = new PrismaClient();
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
 
 // GET all users
 export async function GET(request: NextRequest) {
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     const saltRounds = 10;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
+    const passwordHash = await hash(password, saltRounds);
 
     const result = await prisma.$transaction(async (prisma) => {
       const user = await prisma.user.create({

@@ -4,6 +4,9 @@ import { sign } from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import { prisma } from '../../../../lib/prisma';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
