@@ -153,7 +153,6 @@ const ChartOfAccounts: React.FC<COAProps> = ({ accounts, onAction }) => {
                 <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">الرصيد الحالي</label>
                 <input type="number" required className="w-full px-4 py-3 bg-slate-50 rounded-xl outline-none border border-slate-100 focus:ring-2 focus:ring-slate-900" value={formData.balance} onChange={e => setFormData({...formData, balance: parseFloat(e.target.value)})} />
               </div>
-              {console.log('ChartOfAccounts Form - editingAccount:', editingAccount, 'formData:', formData)}
             </div>
             <div className="mt-8 flex space-x-3 space-x-reverse">
               <button type="submit" className="flex-1 bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-colors">حفظ الحساب</button>

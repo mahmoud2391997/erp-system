@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     });
     
     // Calculate trial balance
-    const trialBalance = accounts.reduce((acc: any[], account: any) => {
+    const trialBalance = accounts.map((account: any) => {
       const balance = parseFloat(account.balance?.toString() || '0');
       return {
         account: account.code,
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         type: account.type,
         balance: balance
       };
-    }, []);
+    });
     
     return NextResponse.json(trialBalance);
   } catch (error: any) {

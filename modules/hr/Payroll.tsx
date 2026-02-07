@@ -31,7 +31,7 @@ const Payroll: React.FC<PayrollProps> = ({ payrolls, employees, onAction }) => {
       // Map database fields to form fields
       setFormData({
         id: record.id,
-        employeeId: record.employeeId || record.employee_id || '',
+        employeeId: record.employeeId || '',
         month: record.month || '',
         status: record.status || 'PENDING',
         amount: record.amount || 0,
