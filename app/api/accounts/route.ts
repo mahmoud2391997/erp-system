@@ -11,10 +11,8 @@ export async function GET(request: NextRequest) {
   try {
     // Handle build-time requests
     if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
-      return NextResponse.json(
-        { error: 'Database not configured' },
-        { status: 500 }
-      );
+      // During build, database is not available. Return empty array.
+      return NextResponse.json([]);
     }
 
     const { searchParams } = new URL(request.url);
