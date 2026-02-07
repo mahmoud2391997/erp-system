@@ -4,10 +4,19 @@ import { AccountType } from '../../../types';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // GET accounts
 export async function GET(request: NextRequest) {
   try {
+    // Handle build-time requests
+    if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 500 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const companyId = searchParams.get('companyId');
     const id = searchParams.get('id');
