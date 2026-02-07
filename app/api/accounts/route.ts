@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../lib/prisma';
 import { AccountType } from '../../../types';
 
 // Force dynamic rendering
@@ -19,6 +18,9 @@ export async function GET(request: NextRequest) {
     if (process.env.NEXT_PHASE === 'phase-production-build') {
       return NextResponse.json([]);
     }
+
+    // Import prisma only when needed
+    const { prisma } = await import('../../../lib/prisma');
 
     const { searchParams } = new URL(request.url);
     const companyId = searchParams.get('companyId');
@@ -65,6 +67,9 @@ export async function GET(request: NextRequest) {
 // POST new account
 export async function POST(request: NextRequest) {
   try {
+    // Import prisma only when needed
+    const { prisma } = await import('../../../lib/prisma');
+    
     const { companyId, name, code, type, balance } = await request.json();
     
     if (!companyId || !name || !code || !type) {
@@ -100,6 +105,9 @@ export async function POST(request: NextRequest) {
 // PUT update account
 export async function PUT(request: NextRequest) {
   try {
+    // Import prisma only when needed
+    const { prisma } = await import('../../../lib/prisma');
+    
     const { id, name, code, type, balance } = await request.json();
     
     if (!id) {
@@ -135,6 +143,9 @@ export async function PUT(request: NextRequest) {
 // DELETE account
 export async function DELETE(request: NextRequest) {
   try {
+    // Import prisma only when needed
+    const { prisma } = await import('../../../lib/prisma');
+    
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     
