@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../lib/prisma';
+import { journalEntries, companies, accounts } from '../../../lib/dummyData';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -10,20 +10,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const companyId = searchParams.get('companyId');
     
-    const journalEntries = await prisma.journalEntry.findMany({
-      where: companyId ? { company_id: companyId } : {},
-      include: {
-        company: true,
-        lines: {
-          include: {
-            account: true
-          }
-        }
-      },
-      orderBy: { date: 'desc' }
-    });
+    const filteredEntries = companyId 
+      ? journalEntries.filter(e => e.company_id === companyId)
+      : journalEntries;
     
-    return NextResponse.json(journalEntries);
+    return NextResponse.json(filteredEntries.map(e => ({ ...e, company: companies.find(c => c.id === e.company_id), lines: e.lines.map(l => ({ ...l, account: accounts.find(a => a.id === l.account_id) })) })));
   } catch (error: any) {
     console.error('Error fetching journal entries:', error);
     return NextResponse.json(
@@ -33,7 +24,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST new journal entry (including invoices/payments)
+// POST new journal entry (dummy - returns existing entry)
 export async function POST(request: NextRequest) {
   try {
     const { companyId, date, reference, description, lines, status } = await request.json();
@@ -45,42 +36,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Validate that debits equal credits
-    const totalDebits = lines.reduce((sum: number, line: any) => sum + (parseFloat(line.debit) || 0), 0);
-    const totalCredits = lines.reduce((sum: number, line: any) => sum + (parseFloat(line.credit) || 0), 0);
-    
-    if (Math.abs(totalDebits - totalCredits) > 0.01) {
-      return NextResponse.json(
-        { error: 'Debits and credits must balance' },
-        { status: 400 }
-      );
-    }
-    
-    const journalEntry = await prisma.journalEntry.create({
-      data: {
-        company_id: companyId,
-        date: new Date(date),
-        reference: reference || null,
-        description: description || null,
-        lines: {
-          create: lines.map((line: any) => ({
-            account_id: line.accountId,
-            description: line.description || null,
-            debit: parseFloat(line.debit) || 0,
-            credit: parseFloat(line.credit) || 0
-          }))
-        }
-      },
-      include: {
-        lines: {
-          include: {
-            account: true
-          }
-        }
-      }
-    });
-    
-    return NextResponse.json(journalEntry, { status: 201 });
+    return NextResponse.json({ ...journalEntries[0], company: companies[0] }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating journal entry:', error);
     return NextResponse.json(
@@ -90,7 +46,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT update journal entry
+// PUT update journal entry (dummy - returns existing entry)
 export async function PUT(request: NextRequest) {
   try {
     const { id, date, reference, description, lines } = await request.json();
@@ -102,53 +58,12 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    if (lines && Array.isArray(lines)) {
-      // Validate that debits equal credits
-      const totalDebits = lines.reduce((sum: number, line: any) => sum + (parseFloat(line.debit) || 0), 0);
-      const totalCredits = lines.reduce((sum: number, line: any) => sum + (parseFloat(line.credit) || 0), 0);
-      
-      if (Math.abs(totalDebits - totalCredits) > 0.01) {
-        return NextResponse.json(
-          { error: 'Debits and credits must balance' },
-          { status: 400 }
-        );
-      }
+    const entry = journalEntries.find(e => e.id === id);
+    if (!entry) {
+      return NextResponse.json({ error: 'Journal entry not found' }, { status: 404 });
     }
     
-    // Delete existing lines and create new ones
-    if (lines && Array.isArray(lines)) {
-      await prisma.journalLine.deleteMany({
-        where: { entry_id: id }
-      });
-    }
-    
-    const journalEntry = await prisma.journalEntry.update({
-      where: { id },
-      data: {
-        ...(date && { date: new Date(date) }),
-        ...(reference !== undefined && { reference }),
-        ...(description !== undefined && { description }),
-        ...(lines && Array.isArray(lines) && {
-          lines: {
-            create: lines.map((line: any) => ({
-              account_id: line.accountId,
-              description: line.description || null,
-              debit: parseFloat(line.debit) || 0,
-              credit: parseFloat(line.credit) || 0
-            }))
-          }
-        })
-      },
-      include: {
-        lines: {
-          include: {
-            account: true
-          }
-        }
-      }
-    });
-    
-    return NextResponse.json(journalEntry);
+    return NextResponse.json({ ...entry, company: companies[0] });
   } catch (error: any) {
     console.error('Error updating journal entry:', error);
     return NextResponse.json(
@@ -158,7 +73,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE journal entry
+// DELETE journal entry (dummy - returns success)
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -170,11 +85,6 @@ export async function DELETE(request: NextRequest) {
         { status: 400 }
       );
     }
-    
-    // Delete journal entry (cascade will delete lines)
-    await prisma.journalEntry.delete({
-      where: { id }
-    });
     
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {

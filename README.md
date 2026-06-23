@@ -12,13 +12,14 @@ Multi-tenant management system built with Next.js 14 App Router and integrated A
 - 🗂️ Full-stack architecture (Frontend + API)
 - 🚀 Server-side rendering
 - 🔌 Integrated API routes
+- 📦 **No database required - uses dummy data**
 
 ## Architecture
 
 This is a **full-stack** Next.js application with:
 - **Frontend**: React components with App Router
 - **Backend**: API routes in `/app/api/` directory
-- **Database**: Prisma with PostgreSQL
+- **Data**: In-memory dummy data (no database required)
 - **Deployment**: Single deployment for both frontend and backend
 
 ## Getting Started
@@ -28,43 +29,16 @@ This is a **full-stack** Next.js application with:
 npm install
 ```
 
-2. Set up environment variables:
-Create a `.env.local` file in the `next-app` directory:
-```bash
-# .env.local
-# JWT Secret for authentication tokens
-# Generate a secure random string using: openssl rand -base64 32
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-
-# Database URL
-DATABASE_URL="postgresql://user:password@localhost:5432/zenith_db?schema=public"
-
-# Direct URL for migrations (optional, same as DATABASE_URL if not using connection pooling)
-DIRECT_URL="postgresql://user:password@localhost:5432/zenith_db?schema=public"
-
-# Node Environment
-NODE_ENV="development"
-
-# Next.js Public API URL (leave empty for same-origin requests)
-NEXT_PUBLIC_API_URL=""
-```
-
-**Important**: 
-- Generate a secure JWT_SECRET for production: `openssl rand -base64 32`
-- Update DATABASE_URL with your actual PostgreSQL connection string
-- The `.env.local` file is gitignored and should not be committed
-
-3. Run database migrations:
-```bash
-npx prisma generate
-```
-
-4. Run development server:
+2. Run development server:
 ```bash
 npm run dev
 ```
 
-5. Build for production:
+3. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+The app will automatically redirect to the dashboard with pre-loaded dummy data.
+
+## Build for production:
 ```bash
 npm run build
 npm start
@@ -78,7 +52,7 @@ app/
 ├── page.tsx               # Home page (redirects to dashboard)
 ├── dashboard/
 │   └── page.tsx           # Dashboard page
-├── api/                   # Backend API routes
+├── api/                   # Backend API routes (using dummy data)
 │   ├── users/
 │   │   └── route.ts       # User endpoints
 │   ├── companies/
@@ -87,6 +61,18 @@ app/
 │   │   └── route.ts       # Product endpoints
 │   ├── payroll-records/
 │   │   └── route.ts       # Payroll endpoints
+│   ├── employees/
+│   │   └── route.ts       # Employee endpoints
+│   ├── leads/
+│   │   └── route.ts       # Lead endpoints
+│   ├── warehouses/
+│   │   └── route.ts       # Warehouse endpoints
+│   ├── accounts/
+│   │   └── route.ts       # Account endpoints
+│   ├── journal/
+│   │   └── route.ts       # Journal entry endpoints
+│   ├── active-modules/
+│   │   └── route.ts       # Module management
 │   └── health/
 │       └── route.ts       # Health check
 └── globals.css             # Global styles
@@ -97,7 +83,7 @@ components/                    # Reusable components
 └── ...
 
 lib/                          # Utilities
-├── api.ts                  # API client (uses internal routes)
+├── dummyData.ts            # Dummy data for all entities
 └── ...
 
 modules/                       # Feature modules
@@ -108,38 +94,84 @@ modules/                       # Feature modules
 └── hr/
 
 types.ts                       # TypeScript types
-prisma/                       # Database schema
 ```
 
 ## API Endpoints
 
-All API endpoints are available at `/api/`:
+All API endpoints are available at `/api/` and use dummy data:
 
 ### Users
 - `GET /api/users` - Get all users
-- `POST /api/users` - Register new user
+- `POST /api/users` - Register new user (returns dummy user)
 
 ### Companies
 - `GET /api/companies` - Get all companies
+- `POST /api/companies` - Create new company (returns dummy company)
 
 ### Products
 - `GET /api/products?companyId=X` - Get products for company
-- `POST /api/products` - Create new product
+- `POST /api/products` - Create new product (returns dummy product)
+- `PUT /api/products/[id]` - Update product (returns dummy product)
+- `DELETE /api/products/[id]` - Delete product (returns success)
 
-### Payroll
+### Employees
+- `GET /api/employees?companyId=X` - Get employees for company
+- `POST /api/employees` - Create new employee (returns dummy employee)
+- `PUT /api/employees/[id]` - Update employee (returns dummy employee)
+- `DELETE /api/employees/[id]` - Delete employee (returns success)
+
+### Payroll Records
 - `GET /api/payroll-records?companyId=X` - Get payroll records
-- `POST /api/payroll-records` - Create payroll record
+- `POST /api/payroll-records` - Create payroll record (returns dummy record)
+- `PUT /api/payroll-records/[id]` - Update payroll record (returns dummy record)
+- `DELETE /api/payroll-records/[id]` - Delete payroll record (returns success)
+
+### Leads
+- `GET /api/leads?companyId=X` - Get leads for company
+- `POST /api/leads` - Create new lead (returns dummy lead)
+- `PUT /api/leads/[id]` - Update lead (returns dummy lead)
+- `DELETE /api/leads/[id]` - Delete lead (returns success)
+
+### Warehouses
+- `GET /api/warehouses?companyId=X` - Get warehouses for company
+- `POST /api/warehouses` - Create new warehouse (returns dummy warehouse)
+- `PUT /api/warehouses/[id]` - Update warehouse (returns dummy warehouse)
+- `DELETE /api/warehouses/[id]` - Delete warehouse (returns success)
+
+### Accounts (Chart of Accounts)
+- `GET /api/accounts?companyId=X` - Get accounts for company
+- `GET /api/coa?companyId=X` - Get chart of accounts
+- `POST /api/accounts` - Create new account (returns dummy account)
+- `PUT /api/accounts/[id]` - Update account (returns dummy account)
+- `DELETE /api/accounts/[id]` - Delete account (returns success)
+
+### Journal Entries
+- `GET /api/journal?companyId=X` - Get journal entries
+- `GET /api/journal-entries?companyId=X` - Get all journal entries
+- `POST /api/journal` - Create journal entry (returns dummy entry)
+- `PUT /api/journal/[id]` - Update journal entry (returns dummy entry)
+- `DELETE /api/journal/[id]` - Delete journal entry (returns success)
+
+### Trial Balance
+- `GET /api/trial?companyId=X` - Get trial balance
+
+### Active Modules
+- `GET /api/active-modules?companyId=X` - Get active modules
+- `POST /api/active-modules` - Activate module (returns dummy module)
+- `POST /api/companies/[id]/modules/[module]` - Activate module
+- `DELETE /api/companies/[id]/modules/[module]` - Deactivate module
 
 ### Health
 - `GET /api/health` - Health check
 
 ## API Integration
 
-The app uses **internal API routes**:
+The app uses **internal API routes** with dummy data:
 - Base URL: `/api/` (no external server needed)
 - API client: `lib/api.ts`
 - Direct function calls to internal routes
 - No external API dependencies
+- No database required
 
 ## Deployment
 
@@ -163,37 +195,39 @@ npm run build
 npm start
 ```
 
-## Environment Variables
+## Dummy Data
 
-Required environment variables (create `.env.local` file):
+The application uses in-memory dummy data located in `lib/dummyData.ts`:
+- **Users**: Pre-configured admin user
+- **Companies**: Demo company with all modules active
+- **Accounts**: Chart of accounts with Arabic account names
+- **Products**: Sample products with categories
+- **Warehouses**: Sample warehouse locations
+- **Employees**: Sample employee records
+- **Payroll Records**: Sample payroll data
+- **Leads**: Sample sales leads
+- **Journal Entries**: Sample journal entries with lines
+- **Invoices**: Sample invoice data
 
-- `JWT_SECRET` - Secret key for JWT token signing (required for authentication)
-  - Generate with: `openssl rand -base64 32`
-  - **Critical**: Use a strong, random secret in production
-- `DATABASE_URL` - PostgreSQL connection string
-- `DIRECT_URL` - Direct database URL for migrations (optional, same as DATABASE_URL if not using pooling)
-- `NEXT_PUBLIC_API_URL` - API base URL (leave empty for internal routes)
-- `NODE_ENV` - Environment (development/production)
-
-## Benefits of Full-Stack Architecture
+## Benefits of Dummy Data Architecture
 
 ### 🚀 Performance
-- Server-side rendering (SSR)
-- API routes in same application
-- No network latency between frontend/backend
+- No database connection overhead
+- Instant data access
+- No network latency
 - Optimized bundle sizes
 
 ### 🔧 Development
-- Single codebase for frontend and backend
-- Shared types and utilities
-- Hot reload for both frontend and API
-- Simplified deployment
+- No database setup required
+- No environment variables needed
+- Instant development environment
+- Easy to test and prototype
 
 ### 📦 Deployment
 - Single deployment process
-- No separate server management
+- No database management
 - Vercel-ready with zero config
-- Environment variable management
+- No environment variable management
 
 ## Features
 
@@ -219,8 +253,9 @@ Required environment variables (create `.env.local` file):
 ## Development
 
 - **Framework**: Next.js 14 with App Router
-- **API**: Integrated API routes
+- **API**: Integrated API routes with dummy data
 - **Styling**: Tailwind CSS
-- **Database**: Prisma with PostgreSQL
 - **Language**: TypeScript
 - **Deployment**: Full-stack ready
+- **Authentication**: Disabled (direct access to dashboard)
+

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { payrollRecords, employees, companies } from '../../../../lib/dummyData';
 
-const prisma = new PrismaClient();
-
-// PUT update payroll record
+// PUT update payroll record (dummy - returns existing record)
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
@@ -16,22 +14,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       );
     }
     
-    const payrollRecord = await prisma.payrollRecord.update({
-      where: { id },
-      data: {
-        ...(employeeId && { employee_id: employeeId }),
-        ...(month && { month }),
-        ...(amount !== undefined && { amount: parseFloat(amount) }),
-        ...(status && { status }),
-        ...(paymentDate && { payment_date: new Date(paymentDate) })
-      },
-      include: {
-        company: true,
-        employee: true
-      }
-    });
+    const record = payrollRecords.find(r => r.id === id);
+    if (!record) {
+      return NextResponse.json({ error: 'Payroll record not found' }, { status: 404 });
+    }
     
-    return NextResponse.json(payrollRecord);
+    return NextResponse.json({ ...record, company: companies.find(c => c.id === record.company_id), employee: employees.find(e => e.id === record.employee_id) });
   } catch (error: any) {
     console.error('Error updating payroll record:', error);
     return NextResponse.json(
@@ -41,7 +29,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-// DELETE payroll record
+// DELETE payroll record (dummy - returns success)
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
@@ -52,10 +40,6 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
         { status: 400 }
       );
     }
-    
-    await prisma.payrollRecord.delete({
-      where: { id }
-    });
     
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {

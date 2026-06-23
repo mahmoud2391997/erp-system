@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { accounts, companies } from '../../../lib/dummyData';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -19,15 +17,8 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    const accounts = await prisma.account.findMany({
-      where: { company_id: companyId },
-      include: {
-        company: true
-      },
-      orderBy: { code: 'asc' }
-    });
-    
-    return NextResponse.json(accounts);
+    const filteredAccounts = accounts.filter(a => a.company_id === companyId);
+    return NextResponse.json(filteredAccounts.map(a => ({ ...a, company: companies.find(c => c.id === a.company_id) })));
   } catch (error: any) {
     console.error('Error fetching accounts:', error);
     return NextResponse.json(
@@ -37,7 +28,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST new account
+// POST new account (dummy - returns existing account)
 export async function POST(request: NextRequest) {
   try {
     const { companyId, code, name, type, balance = 0 } = await request.json();
@@ -49,17 +40,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const account = await prisma.account.create({
-      data: {
-        company_id: companyId,
-        code,
-        name,
-        type,
-        balance: parseFloat(balance)
-      }
-    });
-    
-    return NextResponse.json(account, { status: 201 });
+    return NextResponse.json({ ...accounts[0], company: companies[0] }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating account:', error);
     return NextResponse.json(

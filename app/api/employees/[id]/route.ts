@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { employees, companies } from '../../../../lib/dummyData';
 
-const prisma = new PrismaClient();
-
-// PUT update employee
+// PUT update employee (dummy - returns existing employee)
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
@@ -16,21 +14,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       );
     }
     
-    const employee = await prisma.employee.update({
-      where: { id },
-      data: {
-        ...(name && { name }),
-        ...(role && { role }),
-        ...(department && { department }),
-        ...(status && { status }),
-        ...(salary !== undefined && { salary: parseFloat(salary) })
-      },
-      include: {
-        company: true
-      }
-    });
+    const employee = employees.find(e => e.id === id);
+    if (!employee) {
+      return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
+    }
     
-    return NextResponse.json(employee);
+    return NextResponse.json({ ...employee, company: companies.find(c => c.id === employee.company_id) });
   } catch (error: any) {
     console.error('Error updating employee:', error);
     return NextResponse.json(
@@ -40,7 +29,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-// DELETE employee
+// DELETE employee (dummy - returns success)
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
@@ -51,10 +40,6 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
         { status: 400 }
       );
     }
-    
-    await prisma.employee.delete({
-      where: { id }
-    });
     
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {

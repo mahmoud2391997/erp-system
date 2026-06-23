@@ -1,60 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { accounts, companies } from '../../../lib/dummyData';
 import { AccountType } from '../../../types';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
 
 // GET accounts
 export async function GET(request: NextRequest) {
   try {
-    // Handle build-time requests more comprehensively
-    if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
-      // During build, database is not available. Return empty array.
-      return NextResponse.json([]);
-    }
-    
-    // Additional build-time safety check
-    if (process.env.NEXT_PHASE === 'phase-production-build') {
-      return NextResponse.json([]);
-    }
-
-    // Import prisma only when needed
-    const { prisma } = await import('../../../lib/prisma');
-
     const { searchParams } = new URL(request.url);
     const companyId = searchParams.get('companyId');
     const id = searchParams.get('id');
     
     if (id) {
-      // Get account by ID
-      const account = await prisma.account.findUnique({
-        where: { id },
-        include: {
-          company: true
-        }
-      });
-      
+      const account = accounts.find(a => a.id === id);
       if (!account) {
-        return NextResponse.json(
-          { error: 'Account not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Account not found' }, { status: 404 });
       }
-      
-      return NextResponse.json(account);
+      return NextResponse.json({ ...account, company: companies.find(c => c.id === account.company_id) });
     }
     
-    // Get all accounts (optionally filtered by company)
-    const accounts = await prisma.account.findMany({
-      where: companyId ? { company_id: companyId } : {},
-      include: {
-        company: true
-      },
-      orderBy: { code: 'asc' }
-    });
+    const filteredAccounts = companyId 
+      ? accounts.filter(a => a.company_id === companyId)
+      : accounts;
     
-    return NextResponse.json(accounts);
+    return NextResponse.json(filteredAccounts.map(a => ({ ...a, company: companies.find(c => c.id === a.company_id) })));
   } catch (error: any) {
     console.error('Error fetching accounts:', error);
     return NextResponse.json(
@@ -64,12 +34,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST new account
+// POST new account (dummy - returns existing account)
 export async function POST(request: NextRequest) {
   try {
-    // Import prisma only when needed
-    const { prisma } = await import('../../../lib/prisma');
-    
     const { companyId, name, code, type, balance } = await request.json();
     
     if (!companyId || !name || !code || !type) {
@@ -79,20 +46,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const account = await prisma.account.create({
-      data: {
-        company_id: companyId,
-        name,
-        code,
-        type: type as AccountType,
-        balance: parseFloat(balance) || 0
-      },
-      include: {
-        company: true
-      }
-    });
-    
-    return NextResponse.json(account, { status: 201 });
+    return NextResponse.json({ ...accounts[0], company: companies[0] }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating account:', error);
     return NextResponse.json(
@@ -102,12 +56,9 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT update account
+// PUT update account (dummy - returns existing account)
 export async function PUT(request: NextRequest) {
   try {
-    // Import prisma only when needed
-    const { prisma } = await import('../../../lib/prisma');
-    
     const { id, name, code, type, balance } = await request.json();
     
     if (!id) {
@@ -117,20 +68,12 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    const account = await prisma.account.update({
-      where: { id },
-      data: {
-        ...(name && { name }),
-        ...(code && { code }),
-        ...(type && { type: type as AccountType }),
-        ...(balance !== undefined && { balance: parseFloat(balance) })
-      },
-      include: {
-        company: true
-      }
-    });
+    const account = accounts.find(a => a.id === id);
+    if (!account) {
+      return NextResponse.json({ error: 'Account not found' }, { status: 404 });
+    }
     
-    return NextResponse.json(account);
+    return NextResponse.json({ ...account, company: companies[0] });
   } catch (error: any) {
     console.error('Error updating account:', error);
     return NextResponse.json(
@@ -140,12 +83,9 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE account
+// DELETE account (dummy - returns success)
 export async function DELETE(request: NextRequest) {
   try {
-    // Import prisma only when needed
-    const { prisma } = await import('../../../lib/prisma');
-    
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     
@@ -155,10 +95,6 @@ export async function DELETE(request: NextRequest) {
         { status: 400 }
       );
     }
-    
-    await prisma.account.delete({
-      where: { id }
-    });
     
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {

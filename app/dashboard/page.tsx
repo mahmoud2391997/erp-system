@@ -48,19 +48,6 @@ export default function DashboardPage() {
         const companies = await response.json();
         console.log('Dashboard: Companies fetched for user', userEmail, ':', companies);
         
-        // Also fetch user information to get the name
-        try {
-          const userResponse = await fetch(`/api/auth/user?email=${encodeURIComponent(userEmail)}`);
-          if (userResponse.ok) {
-            const userData = await userResponse.json();
-            setUserName(userData.name || 'Admin User');
-            console.log('Dashboard: User data fetched:', userData);
-          }
-        } catch (userError) {
-          console.log('Dashboard: Could not fetch user data, using default');
-          // Keep default name if user fetch fails
-        }
-        
         if (companies && companies.length > 0) {
           // Prioritize company with active modules, or use the first one
           const apiCompany = companies.find(c => c.active_modules && c.active_modules.length > 0) || companies[0];
@@ -253,20 +240,6 @@ export default function DashboardPage() {
     }
   };
 
-  const handleLogout = () => {
-    console.log("Logging out...");
-    // Clear current company state
-    setCurrentCompany(null);
-    setCompanies([]);
-    setActiveTab('dashboard');
-    setLoading(false);
-    
-    // Clear user email from localStorage
-    localStorage.removeItem('userEmail');
-    
-    // Redirect to login page
-    window.location.href = '/login';
-  };
 
   const handleJournalEdit = async (entry: any) => {
     if (!currentCompany) return;
@@ -420,7 +393,6 @@ export default function DashboardPage() {
       <div className="flex-1 flex flex-col">
         <Header 
           companyName={currentCompany ? currentCompany.name : ''}
-          onLogout={handleLogout}
         />
         
         <main className="flex-1 overflow-y-auto custom-scrollbar p-8 bg-slate-100">

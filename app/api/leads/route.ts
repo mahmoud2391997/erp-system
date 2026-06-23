@@ -1,8 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { leads, companies } from '../../../lib/dummyData';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -13,16 +11,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const companyId = searchParams.get('companyId');
     
-    const leads = await prisma.lead.findMany({
-      where: companyId ? { company_id: companyId } : {},
-      include: {
-        company: true
-      },
-      orderBy: {
-        id: 'desc'
-      }
-    });
-    return NextResponse.json(leads);
+    const filteredLeads = companyId 
+      ? leads.filter(l => l.company_id === companyId)
+      : leads;
+    
+    return NextResponse.json(filteredLeads.map(l => ({ ...l, company: companies.find(c => c.id === l.company_id) })));
   } catch (error: any) {
     console.error('Error fetching leads:', error);
     return NextResponse.json(
@@ -32,7 +25,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST new lead
+// POST new lead (dummy - returns existing lead)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -45,18 +38,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const lead = await prisma.lead.create({
-      data: {
-        company_id: companyId,
-        name,
-        company_name: company,
-        value: value ? parseFloat(value.toString()) : 0,
-        stage: stage || 'NEW',
-        chance: chance ? parseInt(chance.toString()) : 0,
-      }
-    });
-    
-    return NextResponse.json(lead, { status: 201 });
+    return NextResponse.json({ ...leads[0], company: companies[0] }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating lead:', error);
     return NextResponse.json(

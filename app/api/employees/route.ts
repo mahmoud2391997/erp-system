@@ -1,8 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { employees, companies } from '../../../lib/dummyData';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -13,13 +11,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const companyId = searchParams.get('companyId');
     
-    const employees = await prisma.employee.findMany({
-      where: companyId ? { company_id: companyId } : {},
-      include: {
-        company: true
-      }
-    });
-    return NextResponse.json(employees);
+    const filteredEmployees = companyId 
+      ? employees.filter(e => e.company_id === companyId)
+      : employees;
+    
+    return NextResponse.json(filteredEmployees.map(e => ({ ...e, company: companies.find(c => c.id === e.company_id) })));
   } catch (error: any) {
     console.error('Error fetching employees:', error);
     return NextResponse.json(
@@ -29,7 +25,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST new employee
+// POST new employee (dummy - returns existing employee)
 export async function POST(request: NextRequest) {
   try {
     const { companyId, name, salary, role, department, status } = await request.json();
@@ -41,18 +37,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const employee = await prisma.employee.create({
-      data: {
-        company_id: companyId,
-        name,
-        salary: parseFloat(salary),
-        ...(role && { role }),
-        ...(department && { department }),
-        ...(status && { status })
-      }
-    });
-    
-    return NextResponse.json(employee, { status: 201 });
+    return NextResponse.json({ ...employees[0], company: companies[0] }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating employee:', error);
     return NextResponse.json(

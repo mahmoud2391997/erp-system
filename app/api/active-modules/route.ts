@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../lib/prisma';
+import { activeModules } from '../../../lib/dummyData';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -10,11 +10,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const companyId = searchParams.get('companyId');
     
-    const activeModules = await prisma.activeModule.findMany({
-      where: companyId ? { company_id: companyId } : {}
-    });
+    const filteredModules = companyId 
+      ? activeModules.filter(m => m.company_id === companyId)
+      : activeModules;
     
-    return NextResponse.json(activeModules);
+    return NextResponse.json(filteredModules);
   } catch (error: any) {
     console.error('Error fetching active modules:', error);
     return NextResponse.json(
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST new active module
+// POST new active module (dummy - returns existing module)
 export async function POST(request: NextRequest) {
   try {
     const { companyId, moduleName } = await request.json();
@@ -36,14 +36,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const activeModule = await prisma.activeModule.create({
-      data: {
-        company_id: companyId,
-        module_name: moduleName
-      }
-    });
-    
-    return NextResponse.json(activeModule, { status: 201 });
+    return NextResponse.json(activeModules[0], { status: 201 });
   } catch (error: any) {
     console.error('Error creating active module:', error);
     return NextResponse.json(

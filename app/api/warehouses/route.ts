@@ -1,8 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { warehouses, companies } from '../../../lib/dummyData';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -13,13 +11,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const companyId = searchParams.get('companyId');
     
-    const warehouses = await prisma.warehouse.findMany({
-      where: companyId ? { company_id: companyId } : {},
-      include: {
-        company: true
-      }
-    });
-    return NextResponse.json(warehouses);
+    const filteredWarehouses = companyId 
+      ? warehouses.filter(w => w.company_id === companyId)
+      : warehouses;
+    
+    return NextResponse.json(filteredWarehouses.map(w => ({ ...w, company: companies.find(c => c.id === w.company_id) })));
   } catch (error: any) {
     console.error('Error fetching warehouses:', error);
     return NextResponse.json(
@@ -29,7 +25,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST new warehouse
+// POST new warehouse (dummy - returns existing warehouse)
 export async function POST(request: NextRequest) {
   try {
     const { companyId, name, location } = await request.json();
@@ -41,15 +37,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const warehouse = await prisma.warehouse.create({
-      data: {
-        company_id: companyId,
-        name,
-        location
-      }
-    });
-    
-    return NextResponse.json(warehouse, { status: 201 });
+    return NextResponse.json({ ...warehouses[0], company: companies[0] }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating warehouse:', error);
     return NextResponse.json(

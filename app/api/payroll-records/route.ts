@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { payrollRecords } from '../../../lib/dummyData';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -12,10 +10,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const companyId = searchParams.get('companyId');
     
-    const payrollRecords = await prisma.payrollRecord.findMany({
-      where: companyId ? { company_id: companyId } : {}
-    });
-    return NextResponse.json(payrollRecords);
+    const filteredRecords = companyId 
+      ? payrollRecords.filter(r => r.company_id === companyId)
+      : payrollRecords;
+    
+    return NextResponse.json(filteredRecords);
   } catch (error: any) {
     console.error('Error fetching payroll records:', error);
     return NextResponse.json(
@@ -25,7 +24,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST new payroll record
+// POST new payroll record (dummy - returns existing record)
 export async function POST(request: NextRequest) {
   try {
     const { companyId, employeeId, month, amount, status, paymentDate } = await request.json();
@@ -37,19 +36,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const payrollRecord = await prisma.payrollRecord.create({
-      data: {
-        company_id: companyId,
-        employee_id: employeeId,
-        month,
-        amount: parseFloat(amount),
-        status,
-        payment_date: paymentDate ? new Date(paymentDate) : null,
-      },
-    });
-    
-    console.log('Payroll record created successfully:', payrollRecord.id);
-    return NextResponse.json(payrollRecord, { status: 201 });
+    return NextResponse.json(payrollRecords[0], { status: 201 });
   } catch (error: any) {
     console.error('Error creating payroll record:', error);
     return NextResponse.json(

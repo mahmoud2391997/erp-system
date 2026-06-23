@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { products, companies } from '../../../../lib/dummyData';
 
-const prisma = new PrismaClient();
-
-// PUT update product
+// PUT update product (dummy - returns existing product)
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
@@ -16,21 +14,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       );
     }
     
-    const product = await prisma.product.update({
-      where: { id },
-      data: {
-        ...(name && { name }),
-        ...(sku && { sku }),
-        ...(price !== undefined && { price: parseFloat(price) }),
-        ...(stock !== undefined && { stock: parseInt(stock) }),
-        ...(category && { category })
-      },
-      include: {
-        company: true
-      }
-    });
+    const product = products.find(p => p.id === id);
+    if (!product) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
     
-    return NextResponse.json(product);
+    return NextResponse.json({ ...product, company: companies.find(c => c.id === product.company_id) });
   } catch (error: any) {
     console.error('Error updating product:', error);
     return NextResponse.json(
@@ -40,7 +29,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-// DELETE product
+// DELETE product (dummy - returns success)
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
@@ -51,10 +40,6 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
         { status: 400 }
       );
     }
-    
-    await prisma.product.delete({
-      where: { id }
-    });
     
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {

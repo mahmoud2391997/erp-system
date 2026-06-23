@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { journalEntries, companies, accounts } from '../../../lib/dummyData';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -19,20 +17,8 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    const entries = await prisma.journalEntry.findMany({
-      where: { company_id: companyId },
-      include: {
-        company: true,
-        lines: {
-          include: {
-            account: true
-          }
-        }
-      },
-      orderBy: { date: 'desc' }
-    });
-    
-    return NextResponse.json(entries);
+    const filteredEntries = journalEntries.filter(e => e.company_id === companyId);
+    return NextResponse.json(filteredEntries.map(e => ({ ...e, company: companies.find(c => c.id === e.company_id), lines: e.lines.map(l => ({ ...l, account: accounts.find(a => a.id === l.account_id) })) })));
   } catch (error: any) {
     console.error('Error fetching journal entries:', error);
     return NextResponse.json(
@@ -42,7 +28,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST new Journal Entry
+// POST new Journal Entry (dummy - returns existing entry)
 export async function POST(request: NextRequest) {
   try {
     const { companyId, date, reference, description, lines } = await request.json();
@@ -54,24 +40,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const entry = await prisma.journalEntry.create({
-      data: {
-        company_id: companyId,
-        date: new Date(date),
-        reference,
-        description,
-        lines: {
-          create: lines.map((line: any) => ({
-            account_id: line.accountId,
-            description: line.description,
-            debit: line.debit || 0,
-            credit: line.credit || 0
-          }))
-        }
-      }
-    });
-    
-    return NextResponse.json(entry, { status: 201 });
+    return NextResponse.json({ ...journalEntries[0], company: companies[0] }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating journal entry:', error);
     return NextResponse.json(

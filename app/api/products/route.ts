@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { products, companies } from '../../../lib/dummyData';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -14,34 +12,18 @@ export async function GET(request: NextRequest) {
     const id = searchParams.get('id');
     
     if (id) {
-      // Get product by ID
-      const product = await prisma.product.findUnique({
-        where: { id },
-        include: {
-          company: true
-        }
-      });
-      
+      const product = products.find(p => p.id === id);
       if (!product) {
-        return NextResponse.json(
-          { error: 'Product not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Product not found' }, { status: 404 });
       }
-      
-      return NextResponse.json(product);
+      return NextResponse.json({ ...product, company: companies.find(c => c.id === product.company_id) });
     }
     
-    // Get all products (optionally filtered by company)
-    const products = await prisma.product.findMany({
-      where: companyId ? { company_id: companyId } : {},
-      include: {
-        company: true
-      },
-      orderBy: { name: 'asc' }
-    });
+    const filteredProducts = companyId 
+      ? products.filter(p => p.company_id === companyId)
+      : products;
     
-    return NextResponse.json(products);
+    return NextResponse.json(filteredProducts.map(p => ({ ...p, company: companies.find(c => c.id === p.company_id) })));
   } catch (error: any) {
     console.error('Error fetching products:', error);
     return NextResponse.json(
@@ -51,7 +33,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST new product
+// POST new product (dummy - returns existing product)
 export async function POST(request: NextRequest) {
   try {
     const { companyId, name, sku, price, stock, category } = await request.json();
@@ -63,21 +45,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const product = await prisma.product.create({
-      data: {
-        company_id: companyId,
-        name,
-        sku,
-        price: parseFloat(price),
-        stock: parseInt(stock) || 0,
-        category
-      },
-      include: {
-        company: true
-      }
-    });
-    
-    return NextResponse.json(product, { status: 201 });
+    return NextResponse.json({ ...products[0], company: companies[0] }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating product:', error);
     return NextResponse.json(
@@ -87,7 +55,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT update product
+// PUT update product (dummy - returns existing product)
 export async function PUT(request: NextRequest) {
   try {
     const { id, name, sku, price, stock, category } = await request.json();
@@ -99,21 +67,12 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    const product = await prisma.product.update({
-      where: { id },
-      data: {
-        ...(name && { name }),
-        ...(sku && { sku }),
-        ...(price !== undefined && { price: parseFloat(price) }),
-        ...(stock !== undefined && { stock: parseInt(stock) }),
-        ...(category && { category })
-      },
-      include: {
-        company: true
-      }
-    });
+    const product = products.find(p => p.id === id);
+    if (!product) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
     
-    return NextResponse.json(product);
+    return NextResponse.json({ ...product, company: companies[0] });
   } catch (error: any) {
     console.error('Error updating product:', error);
     return NextResponse.json(
@@ -123,7 +82,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE product
+// DELETE product (dummy - returns success)
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -135,10 +94,6 @@ export async function DELETE(request: NextRequest) {
         { status: 400 }
       );
     }
-    
-    await prisma.product.delete({
-      where: { id }
-    });
     
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {

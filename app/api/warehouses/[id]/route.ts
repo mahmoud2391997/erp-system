@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { warehouses, companies } from '../../../../lib/dummyData';
 
-const prisma = new PrismaClient();
-
-// PUT update warehouse
+// PUT update warehouse (dummy - returns existing warehouse)
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
@@ -16,18 +14,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       );
     }
     
-    const warehouse = await prisma.warehouse.update({
-      where: { id },
-      data: {
-        ...(name && { name }),
-        ...(location && { location })
-      },
-      include: {
-        company: true
-      }
-    });
+    const warehouse = warehouses.find(w => w.id === id);
+    if (!warehouse) {
+      return NextResponse.json({ error: 'Warehouse not found' }, { status: 404 });
+    }
     
-    return NextResponse.json(warehouse);
+    return NextResponse.json({ ...warehouse, company: companies.find(c => c.id === warehouse.company_id) });
   } catch (error: any) {
     console.error('Error updating warehouse:', error);
     return NextResponse.json(
@@ -37,7 +29,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-// DELETE warehouse
+// DELETE warehouse (dummy - returns success)
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
@@ -48,10 +40,6 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
         { status: 400 }
       );
     }
-    
-    await prisma.warehouse.delete({
-      where: { id }
-    });
     
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {

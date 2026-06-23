@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../../lib/prisma';
+import { activeModules } from '../../../../../../lib/dummyData';
 
-// POST - Activate a module for a company
+// POST - Activate a module for a company (dummy - returns success)
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string; module: string } }
@@ -16,13 +16,9 @@ export async function POST(
       );
     }
 
-    // Check if module is already active
-    const existingModule = await prisma.activeModule.findFirst({
-      where: {
-        company_id: id,
-        module_name: module,
-      },
-    });
+    const existingModule = activeModules.find(
+      m => m.company_id === id && m.module_name === module
+    );
 
     if (existingModule) {
       return NextResponse.json(
@@ -31,16 +27,8 @@ export async function POST(
       );
     }
 
-    // Activate the module
-    const activeModule = await prisma.activeModule.create({
-      data: {
-        company_id: id,
-        module_name: module,
-      },
-    });
-
     return NextResponse.json(
-      { message: 'Module activated successfully', activeModule },
+      { message: 'Module activated successfully', activeModule: { company_id: id, module_name: module } },
       { status: 201 }
     );
   } catch (error: any) {
@@ -52,7 +40,7 @@ export async function POST(
   }
 }
 
-// DELETE - Deactivate a module for a company
+// DELETE - Deactivate a module for a company (dummy - returns success)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string; module: string } }
@@ -67,15 +55,16 @@ export async function DELETE(
       );
     }
 
-    // Delete the module using the composite primary key
-    await prisma.activeModule.delete({
-      where: {
-        company_id_module_name: {
-          company_id: id,
-          module_name: module,
-        },
-      },
-    });
+    const existingModule = activeModules.find(
+      m => m.company_id === id && m.module_name === module
+    );
+
+    if (!existingModule) {
+      return NextResponse.json(
+        { error: 'Module is not active' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json(
       { message: 'Module deactivated successfully' },
@@ -83,15 +72,6 @@ export async function DELETE(
     );
   } catch (error: any) {
     console.error('Error deactivating module:', error);
-    
-    // If the module doesn't exist, return 404
-    if (error.code === 'P2025') {
-      return NextResponse.json(
-        { error: 'Module is not active' },
-        { status: 404 }
-      );
-    }
-    
     return NextResponse.json(
       { error: error.message || 'Failed to deactivate module' },
       { status: 500 }

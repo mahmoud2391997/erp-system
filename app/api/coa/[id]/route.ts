@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { accounts, companies } from '../../../../lib/dummyData';
 
-const prisma = new PrismaClient();
-
-// PUT update Account
+// PUT update Account (dummy - returns existing account)
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
@@ -16,24 +14,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       );
     }
     
-    const updateData: any = {
-      company_id: companyId,
-    };
+    const account = accounts.find(a => a.id === id);
+    if (!account) {
+      return NextResponse.json({ error: 'Account not found' }, { status: 404 });
+    }
     
-    if (code) updateData.code = code;
-    if (name) updateData.name = name;
-    if (type) updateData.type = type;
-    if (balance !== undefined) updateData.balance = parseFloat(balance.toString());
-    
-    const account = await prisma.account.update({
-      where: { 
-        id,
-        company_id: companyId
-      },
-      data: updateData
-    });
-    
-    return NextResponse.json(account);
+    return NextResponse.json({ ...account, company: companies.find(c => c.id === account.company_id) });
   } catch (error: any) {
     console.error('Error updating account:', error);
     return NextResponse.json(
@@ -43,16 +29,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-// DELETE Account
+// DELETE Account (dummy - returns success)
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
     const url = new URL(request.url);
     const companyId = url.searchParams.get('companyId') || await request.json().then(body => body?.companyId).catch(() => null);
-    
-    console.log('DELETE Account - Full URL:', request.url);
-    console.log('DELETE Account - Parsed params:', params);
-    console.log('DELETE Account - ID from params:', id, 'Company ID:', companyId);
     
     if (!id || !companyId) {
       return NextResponse.json(
@@ -61,37 +43,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       );
     }
     
-    await prisma.account.delete({
-      where: { 
-        id: id,
-        company_id: companyId
-      }
-    });
-    
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.log('CATCH BLOCK EXECUTED - Error caught:', error);
-    console.log('Error code:', error.code);
-    
-    // Handle Prisma Foreign Key Constraint Violation
-    if (error.code === 'P2003') {
-      console.log('Attempted to delete account with existing relations:', params.id);
-      return NextResponse.json(
-        { error: 'لا يمكن حذف هذا الحساب لأنه مرتبط بعمليات مالية أو قيود يومية. يرجى حذف العمليات المرتبطة أولاً.' },
-        { status: 409 }
-      );
-    }
-
-    // Handle Record Not Found
-    if (error.code === 'P2025') {
-      console.log('Attempted to delete non-existent account:', params.id);
-      return NextResponse.json(
-        { error: 'الحساب غير موجود أو تم حذفه بالفعل.' },
-        { status: 404 }
-      );
-    }
-
-    // Log error for debugging (only if not handled above)
     console.error('Error deleting account:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to delete account' },

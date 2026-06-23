@@ -1,10 +1,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { leads, companies } from '../../../../lib/dummyData';
 
-const prisma = new PrismaClient();
-
-// PUT update lead
+// PUT update lead (dummy - returns existing lead)
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -14,18 +12,12 @@ export async function PUT(
     const body = await request.json();
     const { name, company, value, stage, chance } = body;
     
-    const lead = await prisma.lead.update({
-      where: { id },
-      data: {
-        ...(name && { name }),
-        ...(company && { company_name: company }),
-        ...(value !== undefined && { value: parseFloat(value.toString()) }),
-        ...(stage && { stage }),
-        ...(chance !== undefined && { chance: parseInt(chance.toString()) }),
-      }
-    });
+    const lead = leads.find(l => l.id === id);
+    if (!lead) {
+      return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+    }
     
-    return NextResponse.json(lead);
+    return NextResponse.json({ ...lead, company: companies.find(c => c.id === lead.company_id) });
   } catch (error: any) {
     console.error('Error updating lead:', error);
     return NextResponse.json(
@@ -35,16 +27,13 @@ export async function PUT(
   }
 }
 
-// DELETE lead
+// DELETE lead (dummy - returns success)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const { id } = params;
-    await prisma.lead.delete({
-      where: { id }
-    });
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Error deleting lead:', error);

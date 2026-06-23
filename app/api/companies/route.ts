@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../lib/prisma';
+import { companies } from '../../../lib/dummyData';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -12,56 +12,18 @@ export async function GET(request: NextRequest) {
     const email = searchParams.get('email');
     
     if (id) {
-      // Get company by ID
-      const company = await prisma.company.findUnique({
-        where: { id },
-        include: {
-          active_modules: true,
-          memberships: {
-            include: {
-              user: true
-            }
-          }
-        }
-      });
-      
+      const company = companies.find(c => c.id === id);
       if (!company) {
-        return NextResponse.json(
-          { error: 'Company not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Company not found' }, { status: 404 });
       }
-      
       return NextResponse.json(company);
     }
     
     if (email) {
-      // Get companies for specific user by email
-      const companies = await prisma.company.findMany({
-        where: {
-          memberships: {
-            some: {
-              user: {
-                email: email
-              }
-            }
-          }
-        },
-        include: {
-          active_modules: true,
-          memberships: {
-            include: {
-              user: true
-            }
-          }
-        }
-      });
-      
       return NextResponse.json(companies);
     }
     
-    // If no email provided, return empty array for security
-    return NextResponse.json([]);
+    return NextResponse.json(companies);
   } catch (error: any) {
     console.error('Error fetching companies:', error);
     return NextResponse.json(
@@ -71,7 +33,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST new company
+// POST new company (dummy - returns existing company)
 export async function POST(request: NextRequest) {
   try {
     const { name, adminEmail } = await request.json();
@@ -83,17 +45,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const company = await prisma.company.create({
-      data: {
-        name,
-        admin_email: adminEmail
-      },
-      include: {
-        active_modules: true
-      }
-    });
-    
-    return NextResponse.json(company, { status: 201 });
+    return NextResponse.json(companies[0], { status: 201 });
   } catch (error: any) {
     console.error('Error creating company:', error);
     return NextResponse.json(

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { accounts } from '../../../lib/dummyData';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -19,21 +17,13 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Get all accounts for the company
-    const accounts = await prisma.account.findMany({
-      where: { company_id: companyId }
-    });
-    
-    // Calculate trial balance
-    const trialBalance = accounts.map((account: any) => {
-      const balance = parseFloat(account.balance?.toString() || '0');
-      return {
-        account: account.code,
-        name: account.name,
-        type: account.type,
-        balance: balance
-      };
-    });
+    const filteredAccounts = accounts.filter(a => a.company_id === companyId);
+    const trialBalance = filteredAccounts.map(account => ({
+      account: account.code,
+      name: account.name,
+      type: account.type,
+      balance: account.balance
+    }));
     
     return NextResponse.json(trialBalance);
   } catch (error: any) {
