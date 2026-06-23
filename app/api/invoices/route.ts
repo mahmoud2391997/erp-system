@@ -1,16 +1,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { companies } from '../../../lib/dummyData';
 
-const prisma = new PrismaClient();
-
-// GET invoices
+// GET invoices (dummy data)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const companyId = searchParams.get('companyId');
     
-    // Return mock invoices data since Invoice model doesn't exist yet
     const mockInvoices = [
       {
         id: 'inv-001',
@@ -44,7 +41,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST new invoice
+// POST new invoice (dummy data)
 export async function POST(request: NextRequest) {
   try {
     const { companyId, items, total, status } = await request.json();
@@ -56,7 +53,6 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Return mock invoice creation response since Invoice model doesn't exist yet
     const mockInvoice = {
       id: `inv-${Date.now()}`,
       company_id: companyId,
@@ -70,10 +66,7 @@ export async function POST(request: NextRequest) {
         quantity: item.quantity,
         price: item.price
       })),
-      company: {
-        id: companyId,
-        name: 'Test Company'
-      }
+      company: companies[0]
     };
     
     return NextResponse.json(mockInvoice, { status: 201 });

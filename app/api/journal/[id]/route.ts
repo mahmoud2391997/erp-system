@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { journalEntries, companies, accounts } from '../../../../lib/dummyData';
 
-const prisma = new PrismaClient();
-
-// PUT update Journal Entry
+// PUT update Journal Entry (dummy - returns existing entry)
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
@@ -16,39 +14,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       );
     }
     
-    const updateData: any = {
-      company_id: companyId,
-    };
-    
-    if (date) updateData.date = new Date(date);
-    if (reference) updateData.reference = reference;
-    if (description) updateData.description = description;
-    
-    // Handle lines update - delete existing lines and create new ones
-    if (lines && Array.isArray(lines)) {
-      await prisma.journalLine.deleteMany({
-        where: { entry_id: id }
-      });
-      
-      updateData.lines = {
-        create: lines.map((line: any) => ({
-          account_id: line.accountId,
-          description: line.description,
-          debit: line.debit || 0,
-          credit: line.credit || 0
-        }))
-      };
+    const entry = journalEntries.find(e => e.id === id);
+    if (!entry) {
+      return NextResponse.json({ error: 'Journal entry not found' }, { status: 404 });
     }
     
-    const entry = await prisma.journalEntry.update({
-      where: { 
-        id,
-        company_id: companyId
-      },
-      data: updateData
-    });
-    
-    return NextResponse.json(entry);
+    return NextResponse.json({ ...entry, company: companies.find(c => c.id === entry.company_id), lines: entry.lines.map(l => ({ ...l, account: accounts.find(a => a.id === l.account_id) })) });
   } catch (error: any) {
     console.error('Error updating journal entry:', error);
     return NextResponse.json(
@@ -58,14 +29,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-// DELETE Journal Entry
+// DELETE Journal Entry (dummy - returns success)
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
     const url = new URL(request.url);
     const companyId = url.searchParams.get('companyId') || await request.json().then(body => body?.companyId).catch(() => null);
-    
-    console.log('DELETE Journal Entry - ID:', id, 'Company ID:', companyId);
     
     if (!id || !companyId) {
       return NextResponse.json(
@@ -73,19 +42,6 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
         { status: 400 }
       );
     }
-    
-    // First delete all journal lines associated with this entry
-    await prisma.journalLine.deleteMany({
-      where: { entry_id: id }
-    });
-    
-    // Then delete the journal entry itself
-    await prisma.journalEntry.delete({
-      where: { 
-        id,
-        company_id: companyId
-      }
-    });
     
     return NextResponse.json({ success: true });
   } catch (error: any) {
